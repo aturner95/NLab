@@ -1,0 +1,99 @@
+--------- HOW TO USE ---------
+
+The parser and interpreter have their own compilation instructions as defined in the Makefile. This will produce production, sanitizer and valgrind versions for the executables.
+
+Then, in order to abstract testing away, the parser and interp have their own test_ versions too (e.g., test_parse,  test_parse_s,  test_parse_v). These test versions have a void main method and simply run all the tests. The production version does not run any tests.
+
+This enables me to develop my project in a test-driven manner as I can focus on my testing files without having to go through the front door (e.g., I do not want to have to be running my code on a .nlb file every time I want to test something!). This also has the benefit of reducing the size of the production code and there's no chance of any print messages appearing from any tests.
+
+So in summary (with sanitize and valgrind equivalents):
+
+Production versions do not run tests:
+   make parse
+   ./parse <filename>.nlb
+
+   make interp
+   ./interp <filename>.nlb
+
+
+Test versions only run tests and do not run .nlb files:
+   make test_parse
+   ./test_parse 
+
+   make test_interp
+   ./test_intgerp
+
+Also worth noting that due to my project structure, array files and example NLab files live in their own folders, one level down from the Makefile. Therefore, to run an NLab program, you must use the reletive file path e.g.
+   ./interp examples/example1.nlb
+
+
+
+--------- MY TEST PLAN ---------
+
+Testing a recursive descent parser is inherently difficult as, naturally, recursion is hard to test. When we test functions, the objective is to have a known input and an expected output from which we test the actual output. Therefore, we should either look to ensure our functions return a testable type (such as bool) or that we can assert any changes of data state from within the function (e.g. using pointers).
+
+However, with recursive functions, it's hard to test the state of data within the function until the very end. This makes white-box testing tricky.
+
+In order to test my code, I build a Program struct containing an array of char arrays and some functions that allow words to be added in manually.
+
+If we imagine our program as a tree of recursive calls, this makes testing code towards the leafs (e.g. PRINT) and on shorter branches easier - long branches (e.g. INSTRCLIST) will always be hard to test and this is simply the nature of recursion.
+
+This testing method works for both test and production; in production, words are added into the program builder in chronological order as the .nlb file is scanned in. However, for test, words can be added manually in any order to simulate instructions. This means I can develop this project with hard-coded 'programs' in my test files.
+
+For example, if we imagine the following program:
+    1. BEGIN
+    2.  {
+    3.      ONES 1 1 $A
+    4.      SET $A := 5 ;
+    5.      PRINT "A="
+    6.      PRINT $A
+    7.  }
+
+We only want to test small sections of the program at any one time as we build it e.g., the SET grammar on line 4, and so we can build a small dummy program containing only line 4 to test the SET grammar - we don't want to have to create an entire program to only test line 4.
+
+I then use the TESTMODE directive to determine if the test_nlab.c is compiled or not - test mode doesn't care about additional args upon execution and only looks at the test cases in test_nlab.c and either returns EXIT_SUCCESS or an assertion error. Production code is not compiled with the test files, so the parse and interp have equivalent test_parse and test_interp files.
+
+
+
+
+--------- BLACK-BOX TESTING ---------
+Within this project folder exists 5 examples from the brief. These are tested against a production version of the parser/inter.
+
+
+
+
+--------- TEST-DRIVEN DEVELOPMENT ---------
+
+My approach therefore was to start with the program builder code and ensure those functions were tested and behaved as expected (init and add, wasn't too sure of how to test free). Then, map out the parser and identify the leaf functions, such as Integer and String. Once that was done, I could start writing out some tests for how I understand these functions should behave for certain words and then write the code.
+
+I then moved up the recursion tree until everything had been tested (some grammar had to be coded in once big go as the grammar is coupled). Once this was done, I tried some tests for entire programs (as found on brief) and then wrote the main(argc, argv) code and tested the code on some actual files. Finally, I wrote in the TESTMODE directive that allowed me to continue testing without having to worry about .nlb files.
+
+After the parser was developer, I turned to the interpreter. Again, the smaller interpreter functions were identifies (e.g. printing strings/variables) and the source code and tests were developed. These were then written into the parser code with the INTERP directive. The interpreter naturally has more to test as you can assert the actual values of variables after running a program.
+
+
+
+
+--------- TESTING FRAMEWORKS ---------
+
+Having initially read around some articles, journals and stackoverflow, I checked out several C unit testing frameworks such as Unity (https://github.com/ThrowTheSwitch/Unity) and c check (https://github.com/libcheck/check).
+
+However, concerned about created code with too many dependencies where something could potentially go wrong when Neill comes round to marking it, I decided against using a library and instead just created a basic project directory structure that looks a bit more professional; source code and test code are separated into separated folders with the Makefile and driver files sitting at parent-level.
+
+
+
+
+--------- PROBLEMS FACED ---------
+Some areas of the recursive descent parser are tough to test, and so testing is light.
+
+E.g. Testing the error messages was tricky, as it's not always easy to predict where the error message will be set in the tree. Furthermore, sometimes the error messages are not useful. In this NLab, I decided to add char* data into the program struct that pointed to a message on the heap.
+
+I therefore decided to remove error messages from any rules that are too granular (e.g. Integer) or abstract (e.g. polish list) and leave error messages in the four instructions SET, CREATE, LOOP and PRINT as well as BEGIN (report program doesn't begin properly) and INSTRUC_LIST (report program either doesn't end properly or there's an invalid instruction).
+
+The decision behind this setup was motivated by the imperative nature of our NLab program structure, meaning that these program are based around instruction lists and so scoping the error messages at instruction level was the optimal choice between accuracy and usefulness.
+
+However, this was still tricky to test and so testing on the error messages is fairly simple. For example, no error messages are set when testing only the integer rules as that job is left to the instruction that uses an integer. Whilst this doesn't exactly feel right, this decision was made at a holistic level.
+
+Variable scoping would be too advanced, and so the scoping strategy for NLab is simply to scope all variables to the program once declared - whilst this leads to some computational pitfalls, it's a simple solution for a simple interpreter (I wanted to potentially look into this as an extension, however was pressed for time so went with something simpler).
+
+When extending the context-free parser to become an interpreter, some of the exists tests began to fail as some scenarios were only valid when context-free. This meant through the development of the interpreter, the existing test files required constant revision; some tests were rewritten and some simply required pre-processing to either run only for the either the parse or interp (which creates messy code that's at times hard to read). In doing so, however, you do deepen your understanding issues and solutions - so not all a bad thing as I guess that's part of the point of testing!
+

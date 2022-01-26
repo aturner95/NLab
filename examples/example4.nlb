@@ -1,0 +1,6 @@
+BEGIN {
+    LOOP $I 10 {
+        SET $I := $I 1 B-ADD ;
+        PRINT $I
+    }
+}

@@ -1,0 +1,28 @@
+BEGIN {
+
+    READ "arrays/3by3.arr" $A
+    PRINT "$A:"
+    PRINT $A
+
+    PRINT "$B:"
+    SET $B := $A U-TRANSPOSE ;
+    PRINT $B
+
+    PRINT "$C_:=_$A$B"
+    SET $C := $A $B B-DOTPRODUCT ;
+    PRINT $C
+
+    PRINT "$D_:=_SUBARR"
+    SET $D := 1 2 $C U-SUBMATRIX ;
+    PRINT $D
+
+    PRINT "$E_:=_$D^2"
+    SET $E := $D 2 B-POWER ;
+    PRINT $E
+
+    PRINT "$F:=_TRACE"
+    SET $F := $E U-TRACE ;
+    PRINT $F
+
+    
+}

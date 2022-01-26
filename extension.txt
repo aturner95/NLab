@@ -1,0 +1,26 @@
+===== EXTENSION =====
+
+When first considering possible extensions, I considered some of the content learned in the Overview of Computer Architecture module e.g.,
+- Scoping variables using a linked list for each block of code. This would require counting the number of left and right braces and removing variables from the Map once a certain left/right count is met
+- Functions, which would involve using a link register alongside my current word pointer within my Program struct, similar to ARM
+
+However, slightly pressed for time, I went for a simpler route. I looked into MatLab (https://uk.mathworks.com/help/matlab/matlab_prog/array-vs-matrix-operations.html#btyv9yp-4) and decided to dust off my Maths books and extend my project's matrix manipulation by adding some more unary and binary operations. I was however limited to operations that would only result in a positive integer values (e.g., no determinant, cross-product or Eigenvalue computations) . These operations include:
+
+1. Unary ops:
+   1a. Trace - calculates the sum of elements on the diagonal for an NxN matrix. This operation results in a 1x1 array which is pushed onto the stack.
+   1b. Transpose - swaps the rows and columns of an NxM matrix and pushes the resulting MxN matrix onto the stack.
+   1c. Submatrix - whilst this is a unary operation as there's only one array involved, we have to supply the rows and cols that we want to remove, which need to go on the stack. Therefore, in terms of our NLab code, this operation is actually tertuary (<INTEGER> <INTEGER> <VARNAME> <UNARY>) which is not something we've don yet. However, this is still valid grammar according to POLISHLIST, which just wants <POLISH> <POLISHLIST> | ";". The two integers and varname is popped off the stack and the result is then pushed onto the stack (Note: whilst the arrays within the source code are naturally zero-indexed, the row/col args for this function start at 1 not zero!)
+
+2. Binary ops:
+   2a. Dot-product - produces the matrix dot-product of two matrices on the stack. In order to compute, the number of cols in matrix A must equal the number of rows in matrix B. The result is then pushed onto the stack
+   2b. Power - pushes a square matrix (M) onto the stack followed by a scalar (n). This function then performs M^n, by using the dot-product function n many times. This process pushes the orig Matrix back onto the stack after each computation to allow the dot-product of the orig and result matrices to be computed.
+   
+One issue around the power function is that it's quite easy to break the program by creating massive numbers. According to a few articles on the internet, this is a tricky subject in C and so I simply decided to set the maximum power to 10.
+
+Naturally, this is an extension of the interpreter and so the compilation of the extension is the same as the interpreter with the additional -DEXTENSION directive. Therefore, to compile and run this code:
+   make extension
+   ./extention <filename>.nlb
+   
+As well as test mode:
+   make test_extention
+   ./test_extension
