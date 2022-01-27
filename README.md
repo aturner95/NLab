@@ -1,1 +1,52 @@
 # NLab
+
+A list of example NLab programs are found under /examples. These programs may read in array data; a few example of such arrays are found in the /arrays folder. Source code and test code are where you expect them to be. An explanation of how to use the parser/interpreter can be found in testing.txt.
+
+A formal grammar for NLab programs is defined as such:
+
+<PROG> ::= "BEGIN" "{" <INSTRCLIST>
+  
+<INSTRCLIST> ::= "}" | <INSTRC> <INSTRCLIST>
+<INSTRC> ::= <PRINT> | <SET> | <CREATE> | <LOOP>
+  
+# Print array or one-word string to stdout
+<PRINT> ::= "PRINT" <VARNAME> | "PRINT" <STRING>
+  
+# One of the 26 possible (upper-case) variables
+<VARNAME> ::= "$"[A-Z] # e.g. $A, $B, $Z etc.
+  
+# Because of the assumption that a program is just a list of words,
+# strings can’t have spaces in them (for simplicity)
+<STRING> :: Double-quoted string e.g. "../../doof.arr", "Hello!" etc.
+  
+<SET> ::= "SET" <VARNAME> ":=" <POLISHLIST>
+<POLISHLIST> ::= <POLISH><POLISHLIST> | ";"
+<POLISH> ::= <PUSHDOWN> | <UNARYOP> | <BINARYOP>
+<PUSHDOWN> ::== <VARNAME> | <INTEGER>
+  
+# A non-negative integer
+<INTEGER> ::= [0-9]+ # e.g. 1, 250, 3
+  
+# Pop one array, push the result.
+# U-NOT : Flip the Boolean values of an array
+# U-EIGHTCOUNT : Returns the numbers of true values around each cell in the array in its
+# Moore 8-neighbourhood (north, south, west, east, NE, NW, SW, SE).
+<UNARYOP> ::= "U-NOT" | "U-EIGHTCOUNT"
+  
+# Pop 2 arrays, push the resultant array
+# If both arrays are bigger than 1x1, they must be the same size
+# If one array is a 1x1 scalar, apply this value to each cell of the other array in turn
+# B-TIMES operates on corresponding cells in turn (it is not a full matrix multiplication).
+<BINARYOP> :: "B-AND" | "B-OR" | "B-GREATER" | "B-LESS" | "B-ADD" | "B-TIMES" | "B-EQUALS"
+  
+# Create an array full of ones, or read from a file
+<CREATE> ::= "ONES" <ROWS> <COLS> <VARNAME> | "READ" <FILENAME> <VARNAME>
+  
+<ROWS> ::= <INTEGER>
+<COLS> ::= <INTEGER>
+<FILENAME> ::= <STRING>
+  
+# Loop using a variable to count from 1 (!) to <= <INTEGER>
+# IF the variable
+<LOOP> ::= "LOOP" <VARNAME> <INTEGER> "{" <INSTRCLIST>
+  
